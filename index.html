@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard CEO - Alpukat Duo Big</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- PapaParse for CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="logo.png.jpeg" alt="Alpukat Kocok Duo Big" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto;">
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#overview" class="nav-item active"><i class="fa-solid fa-chart-pie"></i> Overview</a>
+                <a href="#cabang" class="nav-item"><i class="fa-solid fa-store"></i> Cabang</a>
+                <a href="#produk" class="nav-item"><i class="fa-solid fa-box-open"></i> Produk</a>
+                <a href="#transaksi" class="nav-item"><i class="fa-solid fa-file-invoice-dollar"></i> Transaksi</a>
+            </nav>
+
+            <div class="filter-section">
+                <h3><i class="fa-solid fa-filter"></i> Filter Data</h3>
+                
+                <div class="filter-group">
+                    <label>Cabang</label>
+                    <select id="branchFilter">
+                        <option value="All">Semua Cabang</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Bulan</label>
+                    <select id="monthFilter">
+                        <option value="All">Semua Bulan</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">CEO</div>
+                    <span>Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div>
+                    <h1>Performa Penjualan</h1>
+                    <p class="subtitle">Update data secara real-time dari seluruh cabang</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-refresh" id="btnRefresh" onclick="refreshData()"><i class="fa-solid fa-rotate-right"></i> Refresh Data</button>
+                </div>
+            </header>
+
+            <div id="loading" class="loading-state">
+                <div class="spinner"></div>
+                <p>Memuat dan memproses jutaan data transaksi...</p>
+            </div>
+
+            <div id="dashboardContent" class="dashboard-content hidden">
+                <!-- KPI Cards -->
+                <div id="overview" class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon revenue"><i class="fa-solid fa-rupiah-sign"></i></div>
+                        <div class="kpi-details">
+                            <h3>Total Pendapatan</h3>
+                            <h2 id="kpiRevenue">Rp 0</h2>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon transactions"><i class="fa-solid fa-receipt"></i></div>
+                        <div class="kpi-details">
+                            <h3>Total Transaksi</h3>
+                            <h2 id="kpiTransactions">0</h2>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon product"><i class="fa-solid fa-crown"></i></div>
+                        <div class="kpi-details">
+                            <h3>Produk Terlaris</h3>
+                            <h2 id="kpiTopProduct">-</h2>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon branch"><i class="fa-solid fa-file-invoice"></i></div>
+                        <div class="kpi-details">
+                            <h3>Total Bill</h3>
+                            <h2 id="kpiTotalBill">0</h2>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon average"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                        <div class="kpi-details">
+                            <h3>Rata-rata / Bill</h3>
+                            <h2 id="kpiAvgPerBill">Rp 0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Area -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-clock"></i> Pendapatan per Jam</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="hourlyTrendChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fa-regular fa-calendar-days"></i> Pendapatan per Hari</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="dailyTrendChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div id="cabang" class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> Penjualan per Cabang</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="branchChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div id="produk" class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-doughnut"></i> Top 5 Produk</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="productChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Area -->
+                <div class="bottom-grid">
+                    <!-- Top 10 Products Table -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3><i class="fa-solid fa-medal"></i> Top 10 Produk</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="topProductsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Produk</th>
+                                        <th>Terjual</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Table Area -->
+                    <div id="transaksi" class="table-card">
+                        <div class="table-header">
+                            <h3><i class="fa-solid fa-list"></i> Transaksi Terakhir</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="recentTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Cabang</th>
+                                        <th>Produk</th>
+                                        <th>Jumlah</th>
+                                        <th>Total (Rp)</th>
+                                        <th>Metode</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="public/data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
