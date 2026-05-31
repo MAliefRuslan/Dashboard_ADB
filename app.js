@@ -21,58 +21,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadData() {
-    // LANGKAH 1: Muat data lokal dulu (instan) agar dashboard langsung tampil
-    if (typeof CSV_STRING !== 'undefined') {
-        const csvData = typeof CSV_STRING === 'string' ? CSV_STRING : CSV_STRING.value;
-        Papa.parse(csvData, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if (results.data && results.data.length > 0) {
-                    processRawData(results.data);
-                    console.log('✅ Data lokal dimuat (' + results.data.length + ' baris)');
-                }
+    // Muat data dari file data.csv (dikonversi dari Master_Data.xlsx)
+    Papa.parse('data.csv', {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            if (results.data && results.data.length > 0) {
+                processRawData(results.data);
+                console.log('✅ Data berhasil dimuat (' + results.data.length + ' baris)');
+            } else {
+                showError('File data.csv kosong atau tidak valid.');
             }
-        });
-    }
-
-    // LANGKAH 2: Coba ambil data live dari Google Sheets (di latar belakang)
-    fetchLiveData();
-}
-
-function fetchLiveData() {
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR_udWWbh3bv0iRtEoX6N5JXC-TMuHHxGn80Hngv9yUYyjXiDrKYX2NVQLZ_JcQv1UKs14_U-p3gPFM/pub?output=csv';
-
-    // Coba semua proxy SEKALIGUS (paralel), pakai yang tercepat berhasil
-    const timeout = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
-
-    const tryDirect = fetch(sheetUrl).then(r => { if (!r.ok) throw new Error(); return r.text(); });
-    const tryCorsproxy = fetch('https://corsproxy.io/?' + encodeURIComponent(sheetUrl)).then(r => { if (!r.ok) throw new Error(); return r.text(); });
-    const tryAllorigins = fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(sheetUrl)).then(r => r.json()).then(d => d.contents);
-
-    // Race semua strategi + timeout 15 detik
-    Promise.any([
-        Promise.race([tryDirect, timeout(15000)]),
-        Promise.race([tryCorsproxy, timeout(15000)]),
-        Promise.race([tryAllorigins, timeout(15000)])
-    ])
-    .then(csvString => {
-        Papa.parse(csvString, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if (results.data && results.data.length > 0) {
-                    processRawData(results.data);
-                    console.log('🔄 Data LIVE berhasil dimuat (' + results.data.length + ' baris)');
-                }
-            }
-        });
-    })
-    .catch(err => {
-        console.warn('⚠️ Gagal memuat data live, menggunakan data lokal.', err);
-        // Jika data lokal juga gagal dimuat, tampilkan error dan hentikan loading
-        if (rawData.length === 0) {
-            showError('Gagal memuat data. Pastikan koneksi internet aktif.');
+        },
+        error: function(err) {
+            console.error('⚠️ Gagal memuat data:', err);
+            showError('Gagal memuat data. Pastikan file data.csv tersedia.');
         }
     });
 }
@@ -98,7 +62,7 @@ function refreshData() {
     // Hide dashboard and show spinner
     document.getElementById('dashboardContent').classList.add('hidden');
     document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('loading').innerHTML = '<div class="spinner"></div><p>Memuat data terbaru dari Google Sheets...</p>';
+    document.getElementById('loading').innerHTML = '<div class="spinner"></div><p>Memuat data terbaru...</p>';
 
     // Animate refresh icon
     const icon = document.querySelector('#btnRefresh i');
