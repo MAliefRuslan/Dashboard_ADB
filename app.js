@@ -570,6 +570,7 @@ function renderPengeluaranChart() {
             }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -577,7 +578,7 @@ function renderPengeluaranChart() {
                 tooltip: { callbacks: { label: (ctx) => formatCurrency(ctx.raw) } }
             },
             scales: {
-                y: { beginAtZero: true, ticks: { callback: (val) => 'Rp ' + (val/1000) + 'k' } }
+                x: { beginAtZero: true, ticks: { callback: (val) => 'Rp ' + (val/1000) + 'k' } }
             }
         }
     });
