@@ -288,7 +288,11 @@ function updateKPIs() {
 
     let totalPengeluaran = 0;
     filteredPengeluaran.forEach(d => totalPengeluaran += d.nominal);
-    let labaBersih = totalRevenue - totalPengeluaran;
+
+    let totalPembayaran = 0;
+    filteredPembayaran.forEach(d => totalPembayaran += d.nominal);
+
+    let labaBersih = totalPembayaran - totalPengeluaran;
 
     document.getElementById('kpiRevenue').textContent = formatCurrency(totalRevenue);
     document.getElementById('kpiTransactions').textContent = totalTransactions.toLocaleString('id-ID');
