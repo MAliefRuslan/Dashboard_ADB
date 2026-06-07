@@ -116,6 +116,20 @@
                             <h2 id="kpiAvgPerBill">Rp 0</h2>
                         </div>
                     </div>
+                    <div class="kpi-card" style="border-left: 4px solid #ff4757;">
+                        <div class="kpi-icon" style="background: rgba(255, 71, 87, 0.1); color: #ff4757;"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                        <div class="kpi-details">
+                            <h3>Total Pengeluaran</h3>
+                            <h2 id="kpiTotalPengeluaran">Rp 0</h2>
+                        </div>
+                    </div>
+                    <div class="kpi-card" style="border-left: 4px solid #2ed573;">
+                        <div class="kpi-icon" style="background: rgba(46, 213, 115, 0.1); color: #2ed573;"><i class="fa-solid fa-sack-dollar"></i></div>
+                        <div class="kpi-details">
+                            <h3>Laba Bersih</h3>
+                            <h2 id="kpiLabaBersih">Rp 0</h2>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Charts Area -->
@@ -153,6 +167,24 @@
                         </div>
                         <div class="chart-body">
                             <canvas id="productChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div id="pengeluaran" class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-money-bill-trend-up"></i> Pengeluaran</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="pengeluaranChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div id="pembayaran" class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-wallet"></i> Metode Pembayaran</h3>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="pembayaranChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -207,7 +239,6 @@
         </main>
     </div>
     
-    <script src="public/data.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

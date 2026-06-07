@@ -1,6 +1,10 @@
 // Data Global
 let rawData = [];
 let filteredData = [];
+let rawPengeluaranData = [];
+let rawPembayaranData = [];
+let filteredPengeluaran = [];
+let filteredPembayaran = [];
 let charts = {};
 
 // Konstanta
@@ -21,23 +25,36 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadData() {
-    // Muat data dari file data.csv (dikonversi dari Master_Data.xlsx)
-    Papa.parse('data.csv', {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            if (results.data && results.data.length > 0) {
-                processRawData(results.data);
-                console.log('✅ Data berhasil dimuat (' + results.data.length + ' baris)');
-            } else {
-                showError('File data.csv kosong atau tidak valid.');
-            }
-        },
-        error: function(err) {
-            console.error('⚠️ Gagal memuat data:', err);
-            showError('Gagal memuat data. Pastikan file data.csv tersedia.');
+    const parseCsv = (url) => {
+        return new Promise((resolve, reject) => {
+            Papa.parse(url, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    resolve(results.data);
+                },
+                error: function(err) {
+                    reject(err);
+                }
+            });
+        });
+    };
+
+    Promise.all([
+        parseCsv('data.csv'),
+        parseCsv('pengeluaran.csv').catch(() => []), // fallback to empty if file missing
+        parseCsv('pembayaran.csv').catch(() => [])  // fallback to empty if file missing
+    ]).then(([mainData, pengeluaranData, pembayaranData]) => {
+        if (mainData && mainData.length > 0) {
+            processRawData(mainData, pengeluaranData, pembayaranData);
+            console.log(`✅ Data berhasil dimuat (Master: ${mainData.length}, Pengeluaran: ${pengeluaranData.length}, Pembayaran: ${pembayaranData.length})`);
+        } else {
+            showError('File data.csv kosong atau tidak valid.');
         }
+    }).catch(err => {
+        console.error('⚠️ Gagal memuat data:', err);
+        showError('Gagal memuat data. Pastikan file data.csv tersedia.');
     });
 }
 
@@ -74,9 +91,15 @@ function refreshData() {
     setTimeout(() => { icon.style.animation = ''; }, 3000);
 }
 
-function processRawData(data) {
-    // Parsing and cleaning data
-    rawData = data.map(row => {
+function parseCurrency(str) {
+    if(!str) return 0;
+    // Format: Rp495.000,00 -> 495000
+    return parseFloat(str.toString().replace(/Rp/g, '').replace(/\./g, '').replace(/,/g, '.').trim()) || 0;
+}
+
+function processRawData(mainData, pengeluaranData, pembayaranData) {
+    // Parsing and cleaning main data
+    rawData = mainData.map(row => {
         // Build jsDate safely for sorting
         let dateParts = row['Tanggal'] ? row['Tanggal'].split('-') : [];
         let jsDate = new Date(0); // fallback
@@ -105,6 +128,22 @@ function processRawData(data) {
     }).filter(row => !isNaN(row.total) && row.dateStr !== 'Unknown');
 
     rawData.sort((a, b) => b.jsDate - a.jsDate);
+
+    // Parsing Pengeluaran
+    rawPengeluaranData = (pengeluaranData || []).map(row => ({
+        category: row['Pengeluaran'] || 'Lainnya',
+        nominal: parseCurrency(row['Nominal']),
+        branch: row['Cabang'] || 'Unknown',
+        monthStr: row['Month'] || 'Unknown'
+    }));
+
+    // Parsing Pembayaran
+    rawPembayaranData = (pembayaranData || []).map(row => ({
+        method: row['Methode Pembayaran'] || 'Lainnya',
+        nominal: parseCurrency(row['Nominal']),
+        branch: row['Cabang'] || 'Unknown',
+        monthStr: row['Month'] || 'Unknown'
+    }));
 
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('dashboardContent').classList.remove('hidden');
@@ -172,6 +211,18 @@ function applyFilters() {
         return matchBranch && matchMonth;
     });
 
+    filteredPengeluaran = rawPengeluaranData.filter(d => {
+        let matchBranch = (branch === 'All') || (d.branch === branch);
+        let matchMonth = (month === 'All') || (d.monthStr === month);
+        return matchBranch && matchMonth;
+    });
+
+    filteredPembayaran = rawPembayaranData.filter(d => {
+        let matchBranch = (branch === 'All') || (d.branch === branch);
+        let matchMonth = (month === 'All') || (d.monthStr === month);
+        return matchBranch && matchMonth;
+    });
+
     updateDashboard();
 }
 
@@ -181,6 +232,8 @@ function updateDashboard() {
     renderDailyTrendChart();
     renderBranchChart();
     renderProductChart();
+    renderPengeluaranChart();
+    renderPembayaranChart();
     renderRecentTable();
     renderTopProductsTable();
 }
@@ -233,11 +286,17 @@ function updateKPIs() {
     let numBills = uniqueBills.size;
     let avgPerBill = numBills > 0 ? (totalRevenue / numBills) : 0;
 
+    let totalPengeluaran = 0;
+    filteredPengeluaran.forEach(d => totalPengeluaran += d.nominal);
+    let labaBersih = totalRevenue - totalPengeluaran;
+
     document.getElementById('kpiRevenue').textContent = formatCurrency(totalRevenue);
     document.getElementById('kpiTransactions').textContent = totalTransactions.toLocaleString('id-ID');
     document.getElementById('kpiTopProduct').textContent = topProduct;
     document.getElementById('kpiTotalBill').textContent = numBills.toLocaleString('id-ID');
     document.getElementById('kpiAvgPerBill').textContent = formatCurrency(avgPerBill);
+    document.getElementById('kpiTotalPengeluaran').textContent = formatCurrency(totalPengeluaran);
+    document.getElementById('kpiLabaBersih').textContent = formatCurrency(labaBersih);
 }
 
 function renderHourlyTrendChart() {
@@ -478,6 +537,84 @@ function renderProductChart() {
                         font: { size: 11 }
                     }
                 }
+            }
+        }
+    });
+}
+
+function renderPengeluaranChart() {
+    const ctx = document.getElementById('pengeluaranChart').getContext('2d');
+    
+    let pengeluaranData = {};
+    filteredPengeluaran.forEach(d => {
+        if(d.category && d.category.trim() !== '') {
+            if(!pengeluaranData[d.category]) pengeluaranData[d.category] = 0;
+            pengeluaranData[d.category] += d.nominal;
+        }
+    });
+
+    let sortedCategories = Object.keys(pengeluaranData).sort((a,b) => pengeluaranData[b] - pengeluaranData[a]);
+    let dataPoints = sortedCategories.map(c => pengeluaranData[c]);
+
+    if(charts.pengeluaran) charts.pengeluaran.destroy();
+
+    charts.pengeluaran = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: sortedCategories,
+            datasets: [{
+                data: dataPoints,
+                backgroundColor: ['#ff4757', '#ff6b81', '#ff7f50', '#ffa502', '#eccc68'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                tooltip: { callbacks: { label: (ctx) => formatCurrency(ctx.raw) } }
+            }
+        }
+    });
+}
+
+function renderPembayaranChart() {
+    const ctx = document.getElementById('pembayaranChart').getContext('2d');
+    
+    let pembayaranData = {};
+    filteredPembayaran.forEach(d => {
+        if(d.method && d.method.trim() !== '') {
+            if(!pembayaranData[d.method]) pembayaranData[d.method] = 0;
+            pembayaranData[d.method] += d.nominal;
+        }
+    });
+
+    let sortedMethods = Object.keys(pembayaranData).sort((a,b) => pembayaranData[b] - pembayaranData[a]);
+    let dataPoints = sortedMethods.map(m => pembayaranData[m]);
+
+    if(charts.pembayaran) charts.pembayaran.destroy();
+
+    charts.pembayaran = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: sortedMethods,
+            datasets: [{
+                label: 'Nominal',
+                data: dataPoints,
+                backgroundColor: '#2ed573',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (ctx) => formatCurrency(ctx.raw) } }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: (val) => 'Rp ' + (val/1000) + 'k' } }
             }
         }
     });
