@@ -559,21 +559,25 @@ function renderPengeluaranChart() {
     if(charts.pengeluaran) charts.pengeluaran.destroy();
 
     charts.pengeluaran = new Chart(ctx, {
-        type: 'pie',
+        type: 'bar',
         data: {
             labels: sortedCategories,
             datasets: [{
+                label: 'Nominal',
                 data: dataPoints,
-                backgroundColor: ['#ff4757', '#ff6b81', '#ff7f50', '#ffa502', '#eccc68'],
-                borderWidth: 0
+                backgroundColor: '#ff4757',
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                legend: { display: false },
                 tooltip: { callbacks: { label: (ctx) => formatCurrency(ctx.raw) } }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: (val) => 'Rp ' + (val/1000) + 'k' } }
             }
         }
     });
