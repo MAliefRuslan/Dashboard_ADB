@@ -35,23 +35,7 @@
                 <a href="#transaksi" class="nav-item"><i class="fa-solid fa-file-invoice-dollar"></i> Transaksi</a>
             </nav>
 
-            <div class="filter-section">
-                <h3><i class="fa-solid fa-filter"></i> Filter Data</h3>
-                
-                <div class="filter-group">
-                    <label>Cabang</label>
-                    <select id="branchFilter">
-                        <option value="All">Semua Cabang</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>Bulan</label>
-                    <select id="monthFilter">
-                        <option value="All">Semua Bulan</option>
-                    </select>
-                </div>
-            </div>
+
             
             <div class="sidebar-footer">
                 <div class="user-info">
@@ -68,8 +52,25 @@
                     <h1>Performa Penjualan</h1>
                     <p class="subtitle">Update data secara real-time dari seluruh cabang</p>
                 </div>
-                <div class="header-actions">
-                    <button class="btn-refresh" id="btnRefresh" onclick="refreshData()"><i class="fa-solid fa-rotate-right"></i> Refresh Data</button>
+                <div class="header-right">
+                    <div class="top-filters">
+                        <div class="filter-group-top">
+                            <label>Cabang</label>
+                            <select id="branchFilter">
+                                <option value="All">Semua Cabang</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group-top">
+                            <label>Bulan</label>
+                            <select id="monthFilter">
+                                <option value="All">Semua Bulan</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-refresh" id="btnRefresh" onclick="refreshData()"><i class="fa-solid fa-rotate-right"></i> Refresh Data</button>
+                    </div>
                 </div>
             </header>
 

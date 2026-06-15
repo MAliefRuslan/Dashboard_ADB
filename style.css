@@ -100,59 +100,52 @@ body {
     color: var(--primary-color);
 }
 
-.filter-section {
-    padding: 24px;
-    margin-top: auto;
-    background-color: rgba(0,0,0,0.15);
-    border-top: 1px solid rgba(255,255,255,0.05);
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
 }
 
-.filter-section h3 {
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(255,255,255,0.6);
-    margin-bottom: 16px;
+.top-filters {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.filter-group-top {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.filter-group {
-    margin-bottom: 16px;
+.filter-group-top label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
 }
 
-.filter-group label {
-    display: block;
-    font-size: 13px;
-    margin-bottom: 6px;
-    color: rgba(255,255,255,0.8);
-}
-
-.filter-group select {
-    width: 100%;
-    padding: 10px 12px;
+.filter-group-top select {
+    padding: 8px 16px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background-color: rgba(255,255,255,0.1);
-    color: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    background-color: white;
+    color: var(--text-color);
     font-family: inherit;
+    font-size: 14px;
     outline: none;
     cursor: pointer;
     transition: var(--transition);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-.filter-group select:focus {
-    border-color: var(--accent-color);
-}
-
-.filter-group select option {
-    background-color: var(--primary-color);
-    color: white;
+.filter-group-top select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(43,89,48,0.1);
 }
 
 .sidebar-footer {
     padding: 24px;
+    margin-top: auto;
     border-top: 1px solid rgba(255,255,255,0.1);
 }
 
