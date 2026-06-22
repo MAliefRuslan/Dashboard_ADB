@@ -733,3 +733,190 @@ function renderTopProductsTable() {
         tbody.appendChild(tr);
     });
 }
+
+// ==========================================
+// FORECASTING / BOM CALCULATION
+// ==========================================
+
+function cleanProductName(name) {
+    if (!name) return "";
+    return name.toString().toLowerCase()
+        .replace(/es teler|es alpukat kocok|jus alpukat|es|kocok/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function matchBomMenu(salesName, bomMenus) {
+    salesName = salesName.toLowerCase().trim();
+    
+    // Exact match first
+    if (bomMenus.includes(salesName)) return salesName;
+    
+    let bestMatch = null;
+    let maxOverlap = 0;
+    
+    let salesWords = cleanProductName(salesName).split(" ");
+    if (salesName.includes("teler")) salesWords.push("teler");
+    if (salesName.includes("kocok")) salesWords.push("kocok");
+    if (salesName.includes("jus")) salesWords.push("jus");
+
+    bomMenus.forEach(menu => {
+        let menuLower = menu.toLowerCase();
+        let menuWords = cleanProductName(menuLower).split(" ");
+        if (menuLower.includes("teler")) menuWords.push("teler");
+        if (menuLower.includes("kocok")) menuWords.push("kocok");
+        if (menuLower.includes("jus")) menuWords.push("jus");
+
+        let overlap = 0;
+        salesWords.forEach(sw => {
+            if (sw.length > 2 && menuWords.some(mw => mw.includes(sw) || sw.includes(mw))) {
+                overlap++;
+            }
+        });
+        
+        // Exact keyword bonus
+        if (salesName.includes("original") || salesName.includes("ori")) {
+            if (menuLower.includes("original") || menuLower.includes("ori")) overlap += 2;
+        }
+        if (salesName.includes("keju") && menuLower.includes("keju")) overlap += 2;
+        if (salesName.includes("coklat") && menuLower.includes("coklat")) overlap += 2;
+        if (salesName.includes("milo") && menuLower.includes("milo")) overlap += 2;
+
+        if (overlap > maxOverlap) {
+            maxOverlap = overlap;
+            bestMatch = menu;
+        }
+    });
+
+    // Fallback defaults
+    if (!bestMatch) {
+        if (salesName.includes("teler")) return bomMenus.find(m => m.toLowerCase().includes("teler original"));
+        if (salesName.includes("jus")) return bomMenus.find(m => m.toLowerCase().includes("jus alpukat"));
+        return bomMenus.find(m => m.toLowerCase().includes("kocok original")); // Default
+    }
+
+    return bestMatch;
+}
+
+function renderForecasting() {
+    if (!rawBomData || rawBomData.length === 0) {
+        console.warn("BOM data is empty or not loaded yet.");
+        return;
+    }
+
+    // 1. Group BOM by Menu
+    let bomRecipes = {};
+    rawBomData.forEach(row => {
+        if (!bomRecipes[row.Menu]) bomRecipes[row.Menu] = [];
+        bomRecipes[row.Menu].push({
+            ingredient: row.Ingredient,
+            qty: parseFloat(row.Qty) || 0,
+            unit: row.Unit
+        });
+    });
+    
+    const bomMenuNames = Object.keys(bomRecipes);
+
+    // 2. Aggregate sales
+    let productSales = {};
+    filteredData.forEach(d => {
+        if (!productSales[d.product]) productSales[d.product] = 0;
+        productSales[d.product] += d.qty;
+    });
+
+    // 3. Match sales to BOM and calculate materials
+    let materialUsage = {}; 
+    
+    // Cache the mapping to speed up
+    let matchedMenus = {};
+
+    for (let [product, soldQty] of Object.entries(productSales)) {
+        if (soldQty <= 0) continue;
+        
+        let matchedMenu = matchedMenus[product];
+        if (!matchedMenu) {
+            matchedMenu = matchBomMenu(product, bomMenuNames);
+            matchedMenus[product] = matchedMenu;
+        }
+
+        if (matchedMenu && bomRecipes[matchedMenu]) {
+            bomRecipes[matchedMenu].forEach(ing => {
+                if (!materialUsage[ing.ingredient]) {
+                    materialUsage[ing.ingredient] = { qty: 0, unit: ing.unit };
+                }
+                materialUsage[ing.ingredient].qty += (ing.qty * soldQty);
+            });
+        }
+    }
+
+    // 4. Format data for display
+    let usageArray = Object.keys(materialUsage).map(ing => ({
+        name: ing,
+        qty: materialUsage[ing].qty,
+        unit: materialUsage[ing].unit
+    })).sort((a, b) => b.qty - a.qty);
+
+    // Display Top 15 in Chart
+    let top15 = usageArray.slice(0, 15);
+    
+    const ctx = document.getElementById('bomChart').getContext('2d');
+    if (charts.bom) charts.bom.destroy();
+
+    charts.bom = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: top15.map(d => d.name),
+            datasets: [{
+                label: 'Penggunaan Bahan',
+                data: top15.map(d => d.qty),
+                backgroundColor: '#2b5930',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { 
+                    callbacks: { 
+                        label: (ctx) => {
+                            let unit = top15[ctx.dataIndex].unit;
+                            return `${ctx.raw.toLocaleString('id-ID')} ${unit}`;
+                        }
+                    } 
+                }
+            },
+            scales: {
+                x: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Display all in Table
+    const tbody = document.querySelector('#bomTable tbody');
+    let html = '';
+    usageArray.forEach(d => {
+        let displayQty = d.qty;
+        let displayUnit = (d.unit || '').toLowerCase();
+        
+        if (displayUnit === 'gr' && displayQty >= 1000) {
+            displayQty = displayQty / 1000;
+            displayUnit = 'kg';
+        } else if (displayUnit === 'ml' && displayQty >= 1000) {
+            displayQty = displayQty / 1000;
+            displayUnit = 'liter';
+        }
+
+        html += `
+            <tr>
+                <td>${d.name}</td>
+                <td><span style="background: var(--bg-color); padding: 4px 8px; border-radius: 4px; font-size: 11px;">${displayUnit.toUpperCase()}</span></td>
+                <td style="font-weight: 700;">${displayQty.toLocaleString('id-ID', {maximumFractionDigits: 2})}</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html || '<tr><td colspan="3" style="text-align: center;">Tidak ada data bahan untuk bulan ini</td></tr>';
+}
