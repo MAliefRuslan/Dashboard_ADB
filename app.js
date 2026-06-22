@@ -3,6 +3,7 @@ let rawData = [];
 let filteredData = [];
 let rawPengeluaranData = [];
 let rawPembayaranData = [];
+let rawBomData = [];
 let filteredPengeluaran = [];
 let filteredPembayaran = [];
 let charts = {};
@@ -66,11 +67,12 @@ function loadData() {
     Promise.all([
         parseCsv('data.csv'),
         parseCsv('pengeluaran.csv').catch(() => []), // fallback to empty if file missing
-        parseCsv('pembayaran.csv').catch(() => [])  // fallback to empty if file missing
-    ]).then(([mainData, pengeluaranData, pembayaranData]) => {
+        parseCsv('pembayaran.csv').catch(() => []),  // fallback to empty if file missing
+        parseCsv('bom.csv').catch(() => [])          // fallback to empty if file missing
+    ]).then(([mainData, pengeluaranData, pembayaranData, bomData]) => {
         if (mainData && mainData.length > 0) {
-            processRawData(mainData, pengeluaranData, pembayaranData);
-            console.log(`✅ Data berhasil dimuat (Master: ${mainData.length}, Pengeluaran: ${pengeluaranData.length}, Pembayaran: ${pembayaranData.length})`);
+            processRawData(mainData, pengeluaranData, pembayaranData, bomData);
+            console.log(`✅ Data berhasil dimuat (Master: ${mainData.length}, BOM: ${bomData.length})`);
         } else {
             showError('File data.csv kosong atau tidak valid.');
         }
@@ -119,7 +121,10 @@ function parseCurrency(str) {
     return parseFloat(str.toString().replace(/Rp/g, '').replace(/\./g, '').replace(/,/g, '.').trim()) || 0;
 }
 
-function processRawData(mainData, pengeluaranData, pembayaranData) {
+function processRawData(mainData, pengeluaranData, pembayaranData, bomData) {
+    // Save BOM data globally
+    rawBomData = bomData || [];
+
     // Parsing and cleaning main data
     rawData = mainData.map(row => {
         // Build jsDate safely for sorting
@@ -258,6 +263,7 @@ function updateDashboard() {
     renderPembayaranChart();
     renderRecentTable();
     renderTopProductsTable();
+    renderForecasting();
 }
 
 // Active state navigation logic

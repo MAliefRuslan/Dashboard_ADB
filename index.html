@@ -39,6 +39,7 @@
                 <a href="#cabang" class="nav-item"><i class="fa-solid fa-store"></i> Cabang</a>
                 <a href="#produk" class="nav-item"><i class="fa-solid fa-box-open"></i> Produk</a>
                 <a href="#transaksi" class="nav-item"><i class="fa-solid fa-file-invoice-dollar"></i> Transaksi</a>
+                <a href="#forecasting" class="nav-item"><i class="fa-solid fa-boxes-stacked"></i> Forecasting</a>
             </nav>
 
 
@@ -242,6 +243,32 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Forecasting Area -->
+                <div id="forecasting" class="table-card" style="margin-top: 24px; width: 100%;">
+                    <div class="table-header">
+                        <h3><i class="fa-solid fa-boxes-stacked"></i> Forecasting Penggunaan Bahan</h3>
+                        <p class="subtitle" style="margin-top: 4px;">Kalkulasi bahan berdasarkan transaksi bulan terpilih</p>
+                    </div>
+                    <div class="chart-body" style="height: 350px; margin-bottom: 24px;">
+                        <canvas id="bomChart"></canvas>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="bomTable">
+                            <thead>
+                                <tr>
+                                    <th>Bahan Baku</th>
+                                    <th>Satuan</th>
+                                    <th>Total Penggunaan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
