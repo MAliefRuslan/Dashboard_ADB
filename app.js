@@ -28,6 +28,11 @@ function toggleSidebar() {
     overlay.classList.toggle('active');
 }
 
+function toggleMinimize() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('minimized');
+}
+
 // Close sidebar when clicking a nav item on mobile
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.sidebar .nav-item').forEach(item => {

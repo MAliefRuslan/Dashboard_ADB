@@ -89,8 +89,63 @@ body {
     height: 100vh;
     box-shadow: 4px 0 24px rgba(0,0,0,0.1);
     z-index: 20;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
+}
+
+.sidebar.minimized {
+    width: 80px;
+}
+
+.minimize-btn {
+    position: absolute;
+    top: 50%;
+    right: -14px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--accent-color);
+    color: var(--primary-color);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    z-index: 30;
+    transition: var(--transition);
+}
+
+.minimize-btn:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+.sidebar.minimized .minimize-btn {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.sidebar.minimized .minimize-btn:hover {
+    transform: translateY(-50%) rotate(180deg) scale(1.1);
+}
+
+.sidebar.minimized .logo h2,
+.sidebar.minimized .nav-text,
+.sidebar.minimized .user-text {
+    display: none;
+}
+
+.sidebar.minimized .nav-item {
+    justify-content: center;
+    padding: 12px;
+}
+
+.sidebar.minimized .logo {
+    justify-content: center;
+}
+
+.sidebar.minimized .user-info {
+    justify-content: center;
 }
 
 .sidebar-header {
@@ -490,6 +545,15 @@ tbody tr:hover {
         left: 0;
         top: 0;
         transform: translateX(-100%);
+        width: 260px; /* Force full width on mobile */
+    }
+
+    .sidebar.minimized {
+        width: 260px; /* Disable minimize on mobile */
+    }
+
+    .minimize-btn {
+        display: none; /* Hide minimize button on mobile */
     }
 
     .sidebar.open {
